@@ -1,0 +1,24 @@
+name: Example
+author: 'Liam McManus (mcmanussliam@gmail.com)'
+year: 2026
+
+cards:
+  - front: What command initializes a new Rust project?
+    back: cargo new my_app
+    hint: Think Cargo.
+
+  - front: What keyword defines an immutable variable in Rust?
+    back: let
+    hint: Mutable uses let mut.
+
+  - front: What macro prints to stdout with a newline?
+    back: println!
+    hint: Ends with an exclamation mark.
+
+  - front: Which file stores Cargo package metadata?
+    back: Cargo.toml
+    hint: TOML config file.
+
+  - front: What collection stores growable lists in Rust?
+    back: Vec<T>
+    hint: Dynamic array.

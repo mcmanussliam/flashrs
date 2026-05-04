@@ -5,299 +5,257 @@ year: 2026
 cards:
   - front: "What are three challenges of using only physical addressing?"
     back: |
-      1. Processes must be loaded into specific physical locations, making relocation difficult.
-      2. External fragmentation becomes a major problem because contiguous free memory is needed.
-      3. Protection/isolation and controlled sharing are harder because addresses directly expose physical memory layout.
-    hint: "2025 memory; also linked to 2024 virtual-vs-physical addressing"
+      Processes must be loaded into specific physical locations, making relocation difficult.
+      External fragmentation is a problem because contiguous free memory is required.
+      Protection and isolation are harder since addresses directly expose physical memory.
 
   - front: "Why is virtual addressing preferred over physical addressing?"
     back: |
-      Virtual addressing gives each process its own address space, improving protection and isolation.
-      It allows relocation without rewriting program addresses.
-      It supports demand paging and lets programs use more memory than physical RAM alone.
-      It also reduces external fragmentation because physical memory need not be allocated contiguously.
-    hint: "Repeated theme across 2024 and 2025"
+      Virtual addressing gives each process its own address space, improving isolation.
+      It allows relocation without modifying program addresses.
+      It supports demand paging and allows programs to exceed physical memory.
+      It reduces external fragmentation since memory need not be contiguous.
 
-  - front: "What is temporal locality, and why does it matter in virtual memory?"
+  - front: "What is temporal locality?"
     back: |
-      Temporal locality means a memory location used recently is likely to be used again soon.
-      It matters because keeping recently used pages in memory increases the hit rate in caches/TLBs
-      and reduces page faults, improving effective memory access time.
-    hint: "2025"
+      Recently accessed memory locations are likely to be accessed again soon.
+      This improves cache and TLB performance and reduces page faults.
 
   - front: "What is the effect of virtual memory on fragmentation?"
     back: |
-      Paging largely removes external fragmentation because pages can be placed in non-contiguous frames.
-      It may still leave some internal fragmentation, because the last page of a region or allocation
-      may not be fully used.
-    hint: "2025"
+      Paging removes external fragmentation by allowing non-contiguous allocation.
+      It introduces internal fragmentation due to fixed page sizes.
 
-  - front: "What happens if page size is too small?"
+  - front: "What is the trade-off in page size?"
     back: |
-      Small pages reduce internal fragmentation, but they require many more pages and page-table entries.
-      That increases page-table memory overhead and translation overhead, and can increase page-fault handling cost.
-    hint: "2024 + 2021 page-size questions"
+      Small pages reduce internal fragmentation but increase page-table size and overhead.
+      Large pages reduce page-table size but increase internal fragmentation and unnecessary data transfer.
 
-  - front: "What happens if page size is too large?"
+  - front: "How does larger page size affect DMA / I/O performance?"
     back: |
-      Large pages reduce page-table size and can improve DMA / sequential transfer efficiency,
-      but they increase internal fragmentation and may load unnecessary data into memory.
-      They can also reduce flexibility because more memory is moved or protected at once.
-    hint: "2024 + 2021"
+      Larger pages lead to fewer, larger transfers, reducing overhead and improving throughput.
+      The trade-off is increased internal fragmentation.
 
-  - front: "How does larger page size affect DMA / I/O transfer performance?"
+  - front: "For a 20-bit virtual address space and 4KB pages, how many offset and page-number bits are there?"
     back: |
-      Larger pages usually mean fewer, larger, and more contiguous transfers.
-      That reduces per-transfer overhead and random accesses, so DMA throughput can improve.
-      The trade-off is worse internal fragmentation and coarser-grained paging.
-    hint: "2021 MCQ"
+      4KB = 2^12 bytes, so the offset is 12 bits.
+      The remaining 8 bits form the page number.
+      There are 256 virtual pages.
 
-  - front: "For a 20-bit virtual address space and 4KB pages, how many offset bits and page-number bits are there?"
+  - front: "If a 2-level page table uses 4 bits for the top-level index out of 8 total, how many second-level tables exist?"
     back: |
-      4KB = 2^12 bytes, so the page offset uses 12 bits.
-      With 20-bit addresses, that leaves 8 bits for the page number.
-      Therefore there are 2^8 = 256 virtual pages.
-    hint: "2024"
-
-  - front: "If a 2-level page table uses 4 bits for the top-level index in a system with 8 page-number bits total, how many second-level page tables exist when fully populated?"
-    back: |
-      If the full virtual page number is 8 bits and the top level uses 4 bits, then the remaining 4 bits
-      index the second level. The number of top-level entries is 2^4 = 16, so at full use there are 16
-      second-level page tables.
-    hint: "2024"
+      The top level has 2^4 = 16 entries.
+      Therefore, there can be up to 16 second-level page tables.
 
   - front: "What is the main advantage of multi-level page tables?"
     back: |
-      They save memory by allocating lower-level page tables only for portions of the virtual address space
-      that are actually used. This makes sparse address spaces practical.
-    hint: "2024"
+      They reduce memory usage by allocating lower-level tables only for used regions.
 
   - front: "What do page-table metadata bits do?"
     back: |
-      They record status and permissions for each page, such as:
-      - valid/present: whether the page is currently mapped
-      - protection bits: read/write/execute permissions
-      - referenced/accessed: whether the page has been used recently
-      - dirty/modified: whether the page has been written to
-      These bits support protection, replacement, and paging decisions.
-    hint: "2024 + 2021 NRU"
+      They store information such as valid/present, read/write/execute permissions,
+      referenced/accessed status, and dirty/modified status.
+      These support protection, replacement, and paging decisions.
 
-  - front: "How does address translation work when a TLB is present?"
+  - front: "How does address translation work with a TLB?"
     back: |
-      1. CPU generates a virtual address.
-      2. Hardware checks the TLB for the virtual-page-to-frame mapping.
-      3. On a TLB hit, the frame number is obtained immediately and combined with the offset.
-      4. On a TLB miss, the page table in memory is consulted.
-      5. If the page is present, the translation may be inserted into the TLB and the access continues.
-      6. If not present, a page fault occurs and the OS must bring the page in.
-    hint: "2025"
+      The CPU generates a virtual address.
+      The TLB is checked for a mapping.
+      On a hit, the frame is obtained immediately.
+      On a miss, the page table is consulted.
+      If not present, a page fault occurs.
 
   - front: "Why does a TLB improve effective access time?"
     back: |
-      Without a TLB, each memory access needs extra memory references to read page-table entries.
-      With a TLB hit, translation is found in fast associative memory, avoiding most of that overhead.
-      Effective access time is therefore a weighted average:
-      high hit rate => close to one memory access,
-      low hit rate => more page-table overhead.
-    hint: "2025 + 2021 two-level lookup question"
+      It caches page-table entries in fast memory, avoiding extra memory accesses on a hit.
 
-  - front: "In the worst case, how does a 2-level page table affect memory access latency compared with physical addressing?"
+  - front: "In the worst case, how does a 2-level page table affect access latency?"
     back: |
-      Ignoring TLBs and page faults, physical addressing needs one memory access.
-      A 2-level page table needs two accesses to traverse the page tables plus one more to access the data,
-      so the worst-case access time is roughly tripled.
-    hint: "2021 MCQ"
+      It requires two memory accesses for page tables plus one for data,
+      roughly tripling access time compared to physical addressing.
 
-  - front: "How would you support multiple page sizes, such as 4KB, 1MB, and 256MB, in one paging system?"
+  - front: "How can multiple page sizes be supported?"
     back: |
-      Use multiple page sizes with page-table entries that encode page size.
-      Higher-level entries can directly map large regions ('huge pages'), while lower levels map smaller pages.
-      Address translation checks the level at which a valid mapping exists and uses the corresponding offset width.
-      The OS chooses large pages for large contiguous regions and small pages where fine granularity is needed.
-    hint: "2024"
+      Page-table entries can encode page size.
+      Higher levels map large regions, lower levels map smaller pages.
 
-  - front: "What does high swappiness with lots of RAM tend to cause, and how can you improve it?"
+  - front: "What is a working set?"
     back: |
-      Excessively high swappiness can cause the OS to swap out pages aggressively even when RAM is plentiful,
-      leading to unnecessary paging / thrashing-like behaviour and worse responsiveness.
-      Improve it by lowering swappiness and ensuring actively used working sets remain resident.
-    hint: "2025 + 2021 paging/thrashing style questions"
+      The working set is the set of pages a process is actively using.
+      If it fits in memory, performance is good; otherwise, page faults increase.
 
-  - front: "How do you diagnose thrashing from utilisation statistics?"
+  - front: "What is thrashing?"
     back: |
-      If CPU utilisation is low while paging-disk utilisation is very high, the system is likely thrashing:
-      the CPU spends much of its time waiting while pages are constantly swapped in and out.
-      A heavily used paging disk is the key symptom.
-    hint: "2021 MCQ"
+      Thrashing occurs when the system spends more time swapping pages than executing,
+      usually because working sets exceed available memory.
 
-  - front: "How can CPU utilisation be improved when the system is thrashing?"
+  - front: "How can CPU utilisation be improved under thrashing?"
     back: |
-      Reduce page-fault frequency by increasing each process's effective resident set.
-      Common fixes:
-      - add more physical memory
-      - reduce the degree of multiprogramming
-      - lower swappiness / tune replacement policy
-      The principle is to keep working sets in RAM so the CPU can execute instead of waiting on paging I/O.
-    hint: "2021 + 2025"
+      Increase memory, reduce multiprogramming, or adjust paging policies
+      so working sets fit in memory.
 
-  - front: "Why can adding more memory improve CPU utilisation in a demand-paging system?"
+  - front: "How do Clock, LRU, and NRU differ?"
     back: |
-      More memory lets processes keep more of their working sets resident.
-      That lowers the page-fault rate, reduces paging I/O, and allows the CPU to spend more time executing useful work.
-    hint: "2021"
+      LRU replaces the least recently used page.
+      Clock approximates LRU using a reference bit.
+      NRU groups pages by referenced and modified bits.
 
-  - front: "Why can reducing the degree of multiprogramming improve CPU utilisation under heavy paging?"
+  - front: "How does NRU choose a victim page?"
     back: |
-      Fewer active processes compete for RAM, so each process can keep a larger resident set.
-      That reduces page faults and paging-disk traffic, which can increase CPU utilisation.
-    hint: "2021"
+      Pages are grouped into four classes based on referenced and modified bits.
+      A page from the lowest non-empty class is selected.
 
-  - front: "How do Clock, LRU, and NRU page-replacement algorithms differ?"
+  - front: "What is concurrency vs parallelism?"
     back: |
-      - LRU replaces the page that has not been used for the longest time.
-      - Clock is an efficient approximation of LRU using a reference bit and a circular scan.
-      - NRU groups pages by reference and modify bits, preferring pages not recently used and unmodified.
-      LRU is conceptually strongest, Clock is practical, NRU is coarse but simple.
-    hint: "Repeated in 2021 memory section"
+      Concurrency is multiple tasks making progress over time.
+      Parallelism is tasks executing simultaneously on multiple cores.
 
-  - front: "How does the NRU replacement algorithm choose a victim page?"
+  - front: "How does a CPU-bound multi-threaded process behave on single vs multi-core CPUs?"
     back: |
-      NRU classifies pages into four classes using (Referenced, Modified):
-      class 0 = (0,0)
-      class 1 = (0,1)
-      class 2 = (1,0)
-      class 3 = (1,1)
-      It chooses a page from the lowest-numbered non-empty class, preferring not recently used
-      and clean pages because they are cheapest to evict.
-    hint: "2021"
-
-  - front: "What is concurrency, and how is it different from parallelism?"
-    back: |
-      Concurrency means multiple tasks are in progress during overlapping time periods.
-      Parallelism means multiple tasks are literally executing at the same instant on different cores / CPUs.
-      From a programmer's perspective, concurrency is about structuring interacting tasks;
-      parallelism is about hardware-supported simultaneous execution for speed.
-    hint: "2025"
-
-  - front: "How does a CPU-bound multi-threaded process behave on a single-core CPU vs a multi-core CPU?"
-    back: |
-      On a single-core CPU, the threads mostly share one core through time slicing, so there is little or no speedup.
-      On a multi-core CPU, CPU-bound threads can run truly in parallel on separate cores, often improving throughput.
-    hint: "2025"
+      On a single core, threads share CPU time with little speedup.
+      On multiple cores, threads can execute in parallel, improving performance.
 
   - front: "What is a race condition?"
     back: |
-      A race condition occurs when multiple threads access shared state without correct synchronisation,
-      and the program's result depends on the timing/interleaving of their operations.
-    hint: "2025 + 2021"
+      It occurs when shared data is accessed without synchronisation,
+      and results depend on execution order.
 
-  - front: "For two threads where one does x = x + 1 and the other does x = x - 1 starting from x = 5, what final values are possible without synchronisation?"
+  - front: "What is a critical section?"
     back: |
-      Possible final values are 4, 5, and 6.
-      - 5 if one update fully happens before the other.
-      - 4 if both read 5, then the decrement writes last.
-      - 6 if both read 5, then the increment writes last.
-      The variation comes from lost updates.
-    hint: "2025"
+      A section of code accessing shared resources that must not be executed concurrently.
 
-  - front: "What is a critical region (critical section)?"
-    back: |
-      A critical region is a section of code that accesses shared data or a shared resource
-      and therefore must not be executed by more than one thread at a time.
-    hint: "2025 + 2021"
-
-  - front: "What is the correct mutex pattern for a critical section?"
+  - front: "What is the correct mutex pattern?"
     back: |
       lock(mutex);
-      // critical section
+      critical section;
       unlock(mutex);
-      The mutex must be acquired before entering the critical section and released afterwards.
-      Initialising the mutex/semaphore to an available state is also required.
-    hint: "2021"
 
-  - front: "What synchronisation should a producer-consumer queue use?"
+  - front: "What synchronisation is used in producer-consumer problems?"
     back: |
-      Use:
-      - a mutex to protect the shared queue state
-      - a condition variable or counting semaphores to wait for 'not empty' and 'not full'
-      Producers lock, wait while full, enqueue, signal not-empty, unlock.
-      Consumers lock, wait while empty, dequeue, signal not-full, unlock.
-    hint: "2021 + 2025 worker queue question"
+      A mutex protects shared data.
+      Condition variables or semaphores manage empty/full conditions.
 
-  - front: "What is the standard condition-variable pattern for waiting on shared state?"
+  - front: "What are the four conditions for deadlock?"
     back: |
-      lock(mutex);
-      while (state does not satisfy required condition) {
-          wait(condition, mutex);
-      }
-      // manipulate shared state
-      signal/broadcast(condition as appropriate);
-      unlock(mutex);
-      The wait must be in a while-loop because wakeups may be spurious or the condition may change.
-    hint: "2021"
+      Mutual exclusion, hold and wait, no pre-emption, circular wait.
 
-  - front: "For a frequently incremented shared counter in the kernel, what lock is usually most appropriate?"
+  - front: "What is a spinlock used for?"
     back: |
-      A spinlock is typically appropriate when the critical section is very short and contention is brief,
-      especially in kernel code where sleeping may be undesirable.
-      If contention is high or the lock may be held longer, a different mechanism may be better.
-    hint: "2025"
+      It is used for very short critical sections where waiting is cheaper than sleeping.
 
-  - front: "In a worker-thread pool with a shared task queue, what should be synchronised and what may run in parallel?"
+  - front: "How does Round Robin scheduling work?"
     back: |
-      Access to the shared queue must be mutually exclusive, so use a mutex around dequeue/enqueue operations.
-      Workers can process different tasks in parallel once they have removed a task from the queue.
-      Condition variables or semaphores can be used to sleep when the queue is empty and wake workers when tasks arrive.
-    hint: "2025"
+      A timer interrupt enforces a time quantum.
+      When it expires, the OS switches to another process.
 
-  - front: "How does Round Robin scheduling rely on timer interrupts?"
+  - front: "Why must the Round Robin quantum be chosen carefully?"
     back: |
-      A hardware timer generates periodic interrupts.
-      When the quantum expires, the interrupt transfers control to the OS, which preempts the running process
-      and schedules the next runnable process.
-      Without timer interrupts, RR cannot enforce time slicing.
-    hint: "2024"
+      Too small increases context switching overhead.
+      Too large reduces responsiveness.
 
-  - front: "Why must the Round Robin time quantum be chosen carefully?"
+  - front: "What factors affect choice of quantum?"
     back: |
-      If the quantum is too small, the system spends too much time context switching.
-      If it is too large, RR behaves more like FCFS and interactive responsiveness suffers.
-      The quantum should balance responsiveness against scheduling overhead.
-    hint: "2024"
+      Context-switch cost, responsiveness, workload type, and CPU burst lengths.
 
-  - front: "What factors matter when choosing a Round Robin quantum?"
+  - front: "Which scheduling algorithm minimises mean turnaround time?"
     back: |
-      Consider:
-      - context-switch overhead
-      - desired responsiveness for interactive tasks
-      - typical CPU burst lengths
-      - workload mix (interactive vs batch)
-      A good quantum is usually large compared with switch cost but small enough to keep latency reasonable.
-    hint: "2024"
+      Shortest Job First (or SRTF) minimises average turnaround time.
 
-  - front: "Which scheduling algorithm usually reduces mean turnaround time compared with RR/FCFS, and why?"
+  - front: "What is FCFS and its weakness?"
     back: |
-      Shortest Job First (or its preemptive form, Shortest Remaining Time First) usually reduces mean turnaround time
-      because short jobs finish earlier instead of waiting behind long jobs.
-      That lowers the average completion delay across all jobs.
-    hint: "2024"
+      Processes run in arrival order.
+      The convoy effect causes short jobs to wait behind long ones.
 
-  - front: "What is FCFS scheduling, and what is its main weakness?"
+  - front: "How is turnaround time calculated?"
     back: |
-      First-Come, First-Served runs tasks strictly in arrival order until each finishes or blocks.
-      Its main weakness is the convoy effect: short jobs can wait a long time behind long jobs,
-      increasing average turnaround and reducing responsiveness.
-    hint: "2021 + 2024"
+      Turnaround time = completion time − arrival time.
 
-  - front: "How do you compute turnaround time?"
+  - front: "What is a process?"
     back: |
-      Turnaround time = completion time - arrival time.
-      Mean turnaround time is the average of that value across all tasks in the workload.
-    hint: "Repeated scheduling calculation theme"
+      A process is a program in execution and the unit of scheduling.
 
-  - front: "What kind of scheduler is suitable for a multi-processor OS?"
+  - front: "What states can a process be in?"
     back: |
-      Use a scheduler that is aware of multiple CPUs, typically with per-core run queues plus load balancing,
-      so work is spread across cores while preserving cache affinity where possible.
-      The design should minimise contention and migration overhead while keeping cores busy.
-    hint: "2024"
+      Running, waiting, sleeping, stopped, zombie.
+
+  - front: "What does a PCB store?"
+    back: |
+      PID, state, priority, parent, and thread information.
+
+  - front: "What is a context switch?"
+    back: |
+      Saving and restoring CPU state to switch between threads.
+
+  - front: "What is the purpose of scheduling?"
+    back: |
+      To manage execution order and improve performance and responsiveness.
+
+  - front: "What are scheduling metrics?"
+    back: |
+      CPU utilisation, throughput, turnaround time, waiting time, response time.
+
+  - front: "What is virtual memory?"
+    back: |
+      It provides an abstraction of a large, contiguous memory space.
+
+  - front: "What does the MMU do?"
+    back: |
+      It translates virtual addresses into physical addresses.
+
+  - front: "How is memory structured in paging?"
+    back: |
+      Memory is divided into pages and frames, mapped via page tables.
+
+  - front: "What is a page fault?"
+    back: |
+      Occurs when a required page is not in memory and must be loaded from disk.
+
+  - front: "What is swapping?"
+    back: |
+      Moving pages between RAM and disk to free memory.
+
+  - front: "What is demand paging?"
+    back: |
+      Pages are loaded only when needed.
+
+  - front: "What is a TLB?"
+    back: |
+      A cache of page-table entries to speed up address translation.
+
+  - front: "Why are buffers used in I/O?"
+    back: |
+      They handle speed mismatch between CPU and I/O,
+      reduce overhead, and allow batching of transfers.
+
+  - front: "What is DMA?"
+    back: |
+      Direct memory access allows devices to transfer data without CPU involvement.
+
+  - front: "What is a filesystem?"
+    back: |
+      A system for organising and accessing data on storage devices.
+
+  - front: "What is i-node indirection?"
+    back: |
+      i-nodes use direct and indirect pointers to reference data blocks,
+      allowing efficient access for small files and scalability for large files.
+
+  - front: "What is a distributed system?"
+    back: |
+      A collection of connected nodes that share resources and computation.
+
+  - front: "How does the OS support networking?"
+    back: |
+      It manages network hardware and provides socket-based communication.
+
+  - front: "What is the principle of least privilege?"
+    back: |
+      Only the minimum permissions necessary should be granted to reduce risk.
+
+  - front: "What is a buffer overflow attack?"
+    back: |
+      Writing beyond allocated memory, potentially causing crashes or code execution.
+
+  - front: "What is a denial-of-service attack?"
+    back: |
+      Overloading a system to prevent legitimate access.

@@ -1,0 +1,213 @@
+name: "University of Glasgow, Distributed and Parallel Technologies (H)"
+author: "Liam McManus (mcmanussliam@gmail.com)"
+year: 2026
+
+cards:
+  - front: "Explain the difference between processes and threads in parallel programming."
+    back: |
+      Processes have separate address spaces, so communication requires IPC or message passing.
+      Threads share the same address space, making communication easier but requiring synchronisation.
+
+      Processes are safer and more isolated.
+      Threads are lighter-weight but prone to data races.
+
+  - front: "What is a data race and why is it problematic?"
+    back: |
+      A data race occurs when multiple threads access the same memory concurrently and at least one writes.
+
+      It leads to undefined behaviour because operations like read-modify-write are not atomic.
+
+      Results can vary between runs and are difficult to debug.
+
+  - front: "What is a critical section and why is it needed?"
+    back: |
+      A critical section is a region of code that accesses shared data and must not be executed concurrently.
+
+      It ensures correctness by preventing inconsistent or interleaved updates.
+
+  - front: "Compare mutexes and condition variables."
+    back: |
+      Mutexes provide mutual exclusion for shared data.
+      Condition variables allow threads to wait for a condition to become true.
+
+      Mutex = protect data.
+      Condition variable = coordinate threads.
+
+  - front: "Describe the fork-join model of parallelism."
+    back: |
+      A program creates (forks) multiple threads to execute work in parallel.
+
+      The threads perform independent work and then synchronise (join) before continuing.
+
+      It is simple but can introduce synchronisation overhead.
+
+  - front: "Why is load balancing important in parallel programs?"
+    back: |
+      Uneven work distribution leads to some threads finishing early and waiting.
+
+      This reduces overall efficiency and limits speedup.
+
+  - front: "Explain static vs dynamic scheduling in OpenMP."
+    back: |
+      Static scheduling divides work evenly at compile/start time.
+
+      Dynamic scheduling assigns work at runtime as threads become free.
+
+      Static has low overhead but may imbalance work.
+      Dynamic improves balance but adds overhead.
+
+  - front: "Why might dynamic scheduling outperform static scheduling?"
+    back: |
+      When task execution times vary, dynamic scheduling prevents threads from becoming idle.
+
+      It adapts to workload imbalance.
+
+  - front: "What is the purpose of OpenMP reduction?"
+    back: |
+      To safely combine results from multiple threads into a single value.
+
+      Avoids race conditions on shared variables.
+
+  - front: "What is the key difference between OpenMP and pthreads?"
+    back: |
+      OpenMP is high-level and directive-based; the compiler handles thread management.
+
+      pthreads is low-level and explicit, giving full control over threads and synchronisation.
+
+  - front: "Explain the concept of speedup in parallel computing."
+    back: |
+      Speedup = time on 1 processor divided by time on n processors.
+
+      Measures how much faster a parallel program runs.
+
+  - front: "Why is linear speedup rarely achieved?"
+    back: |
+      Due to overheads like communication, synchronisation, and sequential portions of the code.
+
+  - front: "Explain Amdahl’s Law in terms of system limits."
+    back: |
+      The sequential portion of a program limits maximum speedup.
+
+      Even with infinite processors, speedup is bounded by the non-parallel fraction.
+
+  - front: "What is parallel efficiency?"
+    back: |
+      Efficiency = speedup / number of processors.
+
+      Measures how well resources are used.
+
+  - front: "What is the difference between strong and weak scaling?"
+    back: |
+      Strong scaling: fixed problem size, more processors reduce runtime.
+
+      Weak scaling: problem size increases with processors, runtime ideally stays constant.
+
+  - front: "Explain the SPMD model used in MPI."
+    back: |
+      All processes run the same program but execute different parts based on their rank.
+
+      Behaviour is controlled using conditionals.
+
+  - front: "Why does MPI use message passing instead of shared memory?"
+    back: |
+      Designed for distributed systems where memory is not shared.
+
+      Communication is explicit and scalable across machines.
+
+  - front: "What is the role of rank in MPI?"
+    back: |
+      Rank identifies each process within a communicator.
+
+      Used to assign roles and coordinate communication.
+
+  - front: "What is the difference between blocking and non-blocking MPI communication?"
+    back: |
+      Blocking operations wait until completion.
+
+      Non-blocking operations allow computation to overlap with communication.
+
+  - front: "Why is non-blocking communication useful?"
+    back: |
+      It improves performance by overlapping communication and computation.
+
+  - front: "Explain the actor model used in Erlang."
+    back: |
+      Computation is done by independent actors that communicate via asynchronous messages.
+
+      Actors do not share memory.
+
+  - front: "What does 'share nothing' mean in Erlang?"
+    back: |
+      Each process has its own memory and communicates only via message passing.
+
+      This avoids data races and simplifies concurrency.
+
+  - front: "Why is Erlang considered highly reliable?"
+    back: |
+      Isolation between processes prevents failures from spreading.
+
+      Fault tolerance is built into the model.
+
+  - front: "How do Erlang processes communicate?"
+    back: |
+      By sending messages to process identifiers (pids) using mailboxes.
+
+  - front: "Compare Go channels with Erlang mailboxes."
+    back: |
+      Go channels are typed and explicitly created.
+
+      Erlang mailboxes are untyped and per-process.
+
+      Go uses channel-based communication; Erlang uses actor messaging.
+
+  - front: "What is a goroutine?"
+    back: |
+      A lightweight thread managed by the Go runtime.
+
+      Much cheaper than OS threads.
+
+  - front: "Why are goroutines efficient?"
+    back: |
+      They are scheduled in user space and have low creation and switching overhead.
+
+  - front: "What is non-determinism in concurrent programs?"
+    back: |
+      Execution order may vary between runs due to scheduling.
+
+      Leads to different possible outcomes.
+
+  - front: "What is SIMD parallelism?"
+    back: |
+      A single instruction operates on multiple data elements simultaneously.
+
+  - front: "Why does SIMD improve performance?"
+    back: |
+      Processes multiple data elements per instruction, reducing instruction count.
+
+  - front: "Why is vectorisation not always possible?"
+    back: |
+      Data dependencies and irregular memory access prevent parallel execution.
+
+  - front: "What is the main challenge in parallel combinatorial search?"
+    back: |
+      Tasks are irregular and unpredictable in size, making load balancing difficult.
+
+  - front: "Why does search order matter in parallel search?"
+    back: |
+      Finding good solutions early can prune large parts of the search space.
+
+  - front: "What is work stealing?"
+    back: |
+      Idle workers take tasks from busy workers to balance load dynamically.
+
+  - front: "Why is communication overhead important in distributed systems?"
+    back: |
+      Communication is slower than computation and can dominate runtime.
+
+  - front: "Why is locality important in parallel systems?"
+    back: |
+      Accessing nearby memory is faster; poor locality leads to performance loss.
+
+  - front: "Why do parallel programs sometimes scale poorly?"
+    back: |
+      Due to synchronisation, communication overhead, and sequential bottlenecks.

@@ -3,381 +3,273 @@ author: 'Liam McManus (mcmanussliam@gmail.com)'
 year: 2026
 
 cards:
-  - front: "Describe the packets exchanged when a browser first retrieves an HTTPS page over TCP, starting from the first TCP packet until the HTTP response is received."
+  - front: "Describe the packets exchanged when a browser first retrieves an HTTPS page over TCP."
     back: |
-      A strong free-text answer should describe:
-      1. TCP three-way handshake:
-         - Client sends SYN to begin the connection and advertise its initial sequence number.
-         - Server replies with SYN+ACK to acknowledge the client's SYN and provide its own sequence number.
-         - Client sends ACK to complete the TCP connection.
-      2. TLS handshake over the established TCP connection:
-         - ClientHello: supported TLS versions, ciphersuites, extensions, key share, SNI, etc.
-         - ServerHello: chosen parameters, plus certificate chain and key exchange/authentication messages.
-         - Client verifies the certificate, completes key exchange, and both sides derive session keys.
-         - Finished messages confirm the handshake and that future traffic is protected.
-      3. HTTP exchange:
-         - Client sends encrypted HTTP request (for example GET /).
-         - Server sends encrypted HTTP response containing headers and body.
-      Purpose:
-      - TCP provides reliable, ordered delivery.
-      - TLS provides confidentiality, integrity, and server authentication.
-      - HTTP carries the application request/response.
-    hint: "Think: TCP handshake -> TLS handshake -> encrypted HTTP request/response."
+      1. TCP handshake: SYN → SYN+ACK → ACK.
+      2. TLS handshake: ClientHello, ServerHello (+ certificate), key exchange, Finished.
+      3. HTTP exchange: encrypted request and response.
 
-  - front: "Why does first-time retrieval of an HTTPS page over TCP often take about three RTTs before the first response data arrives?"
+      TCP provides reliability, TLS provides security, HTTP carries application data.
+    hint: "TCP → TLS → HTTP"
+
+  - front: "Why does HTTPS retrieval typically take about three RTTs?"
     back: |
-      Roughly three RTTs are needed because:
-      - 1 RTT for the TCP three-way handshake.
-      - About 1 RTT for the TLS handshake before application data can be safely exchanged.
-      - About 1 RTT for the HTTP request to reach the server and the first response bytes to return.
-      This is a simplification, but it captures the main latency components for a new connection with no prior state.
-    hint: "Count the setup stages before useful application data returns."
+      1 RTT for TCP setup, ~1 RTT for TLS handshake, ~1 RTT for HTTP request/response.
+      Each step depends on the previous one.
 
-  - front: "Give three protocol changes that could reduce first retrieval of HTTPS data from about three RTTs to about two RTTs, and explain why each is problematic in practice."
+  - front: "Give two ways to reduce HTTPS setup latency and why they are problematic."
     back: |
-      Three classic ideas are:
-      1. Send data in the TCP SYN and/or response in SYN+ACK.
-         - Benefit: overlaps connection setup with application data.
-         - Problem: middleboxes, amplification risks, replay/safety issues, and the server may not yet be ready to trust or process the request.
-      2. Use TLS 0-RTT or resume prior security state.
-         - Benefit: reduces or overlaps handshake cost.
-         - Problem: only works when prior state exists; 0-RTT data is vulnerable to replay, so it is unsuitable for general requests.
-      3. Remove one handshake phase entirely, for example by merging transport and crypto setup.
-         - Benefit: fewer round trips.
-         - Problem: deployment compatibility, ossified networks, and difficulty replacing established protocols at Internet scale.
-      The general lesson is that reducing RTTs is possible, but deployability, security, and compatibility often block the obvious optimisations.
-    hint: "Think: data in SYN, TLS resumption/0-RTT, merged handshakes."
+      - Sending data in SYN: unsafe, middlebox issues.
+      - 0-RTT TLS: replay attacks, requires prior state.
 
-  - front: "Why might clients try multiple connection attempts in parallel rather than trying DNS results one by one?"
+  - front: "Why does TCP use a three-way handshake?"
     back: |
-      Sequential attempts can be slow when one address family, interface, or path is broken or just slower than another. Parallel or staggered connection attempts reduce user-visible delay by avoiding head-of-line waiting on a bad choice.
+      To confirm bidirectional communication and synchronise sequence numbers, avoiding half-open connections.
 
-      Typical reasons:
-      - IPv6 may be advertised but temporarily unusable.
-      - One returned address may be far slower than another.
-      - WiFi and Ethernet paths may differ.
-      - A server may be reachable over several addresses, but not all equally well.
-
-      Modern clients therefore often race candidates or use a staggered approach such as Happy Eyeballs: try the most promising address first, then quickly try alternatives if the first does not connect promptly.
-    hint: "Think Happy Eyeballs and reducing delay when one path is bad."
-
-  - front: "How does QUIC change connection establishment compared with TCP + TLS?"
+  - front: "Why is TCP a byte-stream protocol?"
     back: |
-      QUIC integrates transport setup and cryptographic setup into one protocol over UDP.
+      It provides flexible, continuous data delivery; applications define message boundaries.
 
-      Main effects:
-      - Fewer round trips than separate TCP then TLS handshakes.
-      - Faster setup for new connections.
-      - Very fast resumption and potentially 0-RTT data for returning clients.
-      - Connection migration support and improved recovery from address changes.
-
-      In contrast, TCP + TLS historically required a transport handshake first and then a separate security handshake. QUIC reduces setup latency by combining these stages.
-    hint: "Main idea: transport and crypto are combined."
-
-  - front: "Explain the difference between intra-domain routing and inter-domain routing."
+  - front: "Why can recv() return different amounts of data?"
     back: |
-      Intra-domain routing operates within a single administrative domain or autonomous system (AS), such as one ISP or enterprise network. It usually aims for efficient path selection based on metrics such as cost, delay, or link capacity. Examples include OSPF and IS-IS.
+      TCP has no message boundaries; segmentation varies with buffering and network conditions.
 
-      Inter-domain routing operates between autonomous systems across the wider Internet. It must respect business relationships, policy, and scalability constraints, not just shortest paths. The main protocol is BGP.
-
-      So the key difference is:
-      - Intra-domain: one administration, performance-oriented optimisation.
-      - Inter-domain: many administrations, policy-driven routing between ASes.
-    hint: "One AS vs between ASes; optimisation vs policy."
-
-  - front: "What are the Gao-Rexford rules in BGP, and why are they desirable?"
+  - front: "Why is RTT often more important than bandwidth?"
     back: |
-      The Gao-Rexford rules are policy guidelines that align route export and route preference with commercial relationships.
+      Many operations require multiple round trips; latency cannot be parallelised.
 
-      Core ideas:
-      - Prefer customer routes over peer routes, and peer routes over provider routes, because customer routes generate revenue while provider routes cost money.
-      - Export customer-learned routes broadly.
-      - Do not normally export routes learned from one peer or provider to another peer or provider.
-
-      Why desirable:
-      - They reflect economic incentives.
-      - They reduce the chance of policy conflicts.
-      - They help promote globally stable routing and avoid many forms of dispute or oscillation.
-
-      Intuition: an AS is willing to carry traffic for its customers, but not usually to provide unpaid transit between other networks.
-    hint: "Customer > peer > provider, and limited export of peer/provider routes."
-
-  - front: "What is a BGP prefix hijack, and how can RPKI help?"
+  - front: "Why do clients use Happy Eyeballs?"
     back: |
-      A prefix hijack occurs when an AS originates or advertises IP address space that it is not legitimately authorised to announce. Traffic may then be misdirected, intercepted, blackholed, or analysed by the attacker.
+      To avoid delays from slow or broken paths by trying multiple addresses in parallel.
 
-      RPKI helps by allowing resource holders to publish cryptographic Route Origin Authorizations (ROAs) stating which AS is authorised to originate a prefix. Routers can validate announcements against these ROAs and classify them as valid, invalid, or unknown.
-
-      Limits:
-      - RPKI mainly validates route origin, not the full AS-path.
-      - Its protection depends on deployment by address holders and network operators.
-      - It reduces many hijacks, but does not solve every BGP security problem.
-    hint: "Hijack = false origin advertisement; RPKI validates who may originate."
-
-  - front: "What is protocol ossification, and why is it a problem?"
+  - front: "How does QUIC improve connection setup?"
     back: |
-      Protocol ossification happens when middleboxes, firewalls, NATs, and network software assume specific protocol formats or behaviours and reject unfamiliar variations. The network becomes rigid, making it hard to evolve protocols.
+      Combines transport and crypto handshakes, reducing round trips.
 
-      Why it matters:
-      - New protocol versions or extensions can fail even when standards are correct.
-      - Innovation slows because deployers fear breakage.
-      - Designers are pushed to hide changes inside encrypted or already-accepted formats.
-
-      Example:
-      - A device that only accepts known TCP or TLS patterns may block new options or extension values, even though endpoints could otherwise support them.
-    hint: "Middleboxes freeze old behaviour and make new protocol features hard to deploy."
-
-  - front: "What is GREASE, and how does GREASE help prevent ossification?"
+  - front: "Why does QUIC use UDP?"
     back: |
-      GREASE means deliberately sending reserved or dummy extension values, versions, or parameters so that implementations and middleboxes are forced to tolerate unknown values.
+      UDP avoids middlebox restrictions and allows flexible protocol design.
 
-      Why it helps:
-      - It checks that software does not assume only today's values will ever appear.
-      - It keeps extension points 'exercised' so future real extensions are less likely to break.
-      - Combined with encryption, it reduces how much intermediaries can inspect and hard-code.
-
-      So pervasive encryption hides details from the network, while GREASE makes sure endpoints and intermediaries stay flexible about unknown protocol values.
-    hint: "Use fake reserved values now so real new values work later."
-
-  - front: "How do DNS over TLS (DoT) and DNS over HTTPS (DoH) work?"
+  - front: "Why might QUIC fail?"
     back: |
-      DNS over TLS (DoT):
-      - DNS messages are sent through a TLS-protected channel, usually on a dedicated port.
-      - The traffic is recognisably DNS, but encrypted in transit.
+      UDP may be blocked by firewalls.
 
-      DNS over HTTPS (DoH):
-      - DNS queries and responses are carried inside HTTPS requests and responses.
-      - Since it looks like ordinary web traffic on the usual HTTPS port, it blends in with other encrypted traffic.
-
-      Both provide transport confidentiality and integrity against on-path observers. The main operational difference is that DoT is clearly identifiable as DNS traffic, whereas DoH is embedded in generic web traffic.
-    hint: "DoT = DNS over TLS on a dedicated DNS service; DoH = DNS inside HTTPS."
-
-  - front: "Why has DNS over HTTPS (DoH) proven controversial while DNS over TLS (DoT) generally has not?"
+  - front: "Why is 0-RTT risky?"
     back: |
-      DoH is controversial because it is harder for network operators, enterprises, schools, and governments to identify and manage. Since DoH looks like normal HTTPS traffic, it can bypass local DNS policies, filtering, parental controls, or enterprise monitoring.
+      Data can be replayed by attackers.
 
-      DoT has similar encryption benefits, but it is less controversial because:
-      - It usually uses a dedicated service/port and is visibly DNS.
-      - Operators can recognise, block, or manage it more easily.
-      - It fits more naturally into existing DNS operational models.
-
-      Extra controversy around DoH also comes from:
-      - Centralisation concerns if browsers direct users to a few large public resolvers.
-      - Tension between user privacy and local administrative control.
-
-      In short: the encryption itself is not the main controversy; the issue is that DoH hides DNS inside ordinary web traffic and shifts operational control.
-    hint: "Same privacy goal, but DoH hides inside HTTPS and is harder to control."
-
-  - front: "What role do the DNS root servers play, and how do resolvers know how to find them?"
+  - front: "Why is it hard to deploy new transport protocols?"
     back: |
-      Root servers are the starting point of recursive DNS resolution. They do not usually know the final answer for a hostname; instead, they direct the resolver to the appropriate top-level domain (TLD) servers such as .com, .org, or country-code TLDs.
+      Middleboxes block unknown protocols, causing ossification.
 
-      Resolvers know how to find the root because they are configured with a root hints file: a built-in list of the root server names and addresses. Using these addresses, the resolver can begin the iterative lookup process.
-
-      So the root is the top of the DNS hierarchy and acts as the first referral point.
-    hint: "Top of the hierarchy; resolvers start from built-in root hints."
-
-  - front: "What is anycast, and why is it useful for DNS root servers?"
+  - front: "What is protocol ossification?"
     back: |
-      Anycast means the same IP address is announced from many geographically distributed servers. Routing delivers a client to one nearby or otherwise topologically preferred instance.
+      Network devices enforce old protocol behaviour, preventing evolution.
 
-      Why useful for root servers:
-      - Improves latency by directing users to a close replica.
-      - Increases resilience and fault tolerance.
-      - Helps absorb attacks through distribution and load sharing.
-      - Simplifies deployment because many physical sites can share one logical service address.
-
-      This is especially valuable for critical global infrastructure such as the DNS root.
-    hint: "Same IP from many places; routing picks a nearby instance."
-
-  - front: "What are the two main aspects of DNS security: transport security and record security?"
+  - front: "How does GREASE help?"
     back: |
-      Transport security protects the DNS exchange between the client and resolver. It mainly defends against eavesdropping and tampering on the path. Examples: DoT and DoH.
+      Forces implementations to tolerate unknown values, preserving flexibility.
 
-      Record security protects the authenticity and integrity of DNS data itself, regardless of transport. It helps ensure the returned records are genuine and not forged. The main example is DNSSEC.
-
-      So:
-      - Transport security protects the channel.
-      - Record security protects the correctness of the data.
-    hint: "Channel protection vs authenticated DNS data."
-
-  - front: "How many customers can a network operator support with the public IPv4 block 192.0.2.0/24 if each customer gets one public IPv4 address?"
+  - front: "Why does TCP suffer head-of-line blocking?"
     back: |
-      A /24 contains 2^(32-24) = 256 total IPv4 addresses.
+      Data must be delivered in order; loss delays subsequent data.
 
-      If each customer must receive one public IPv4 address, the rough answer is 256 customers. In practice, some addresses may be reserved for infrastructure, gateways, or unusable under a particular allocation plan, so the operational number may be slightly lower.
-
-      In an exam, state the total calculation clearly and mention any assumptions.
-    hint: "A /24 has 256 addresses total."
-
-  - front: "How can a network operator support more customers than public IPv4 addresses without getting more IPv4 space?"
+  - front: "How does QUIC avoid head-of-line blocking?"
     back: |
-      The operator can use address sharing with NAT, typically carrier-grade NAT (CGNAT).
+      Uses independent streams within a connection.
 
-      Approach:
-      - Give customers private IPv4 addresses internally.
-      - Translate many customers' flows onto a smaller set of public IPv4 addresses.
-      - Distinguish flows using transport-layer port numbers.
-
-      Is there a limit?
-      - Yes. The practical limit depends on the number of usable transport ports per public address, the traffic mix, logging/management constraints, and application compatibility.
-      - So the number of customers can be much larger than the number of public IPv4 addresses, but not infinite.
-
-      Main trade-offs:
-      - Breaks end-to-end reachability.
-      - Complicates inbound connections and some protocols.
-      - Makes abuse attribution and logging harder.
-    hint: "Use CGNAT and share addresses via port translation."
-
-  - front: "Why do private backbone networks often show lower latency than the public Internet between similar sites?"
+  - front: "Why does TCP use slow start?"
     back: |
-      Private networks often achieve lower latency because the operator can optimise the entire path end to end.
+      To safely probe network capacity from an unknown starting point.
 
-      Reasons include:
-      - Direct control over routing, rather than policy-driven interdomain BGP choices.
-      - Fewer AS hops and less path inflation.
-      - Better traffic engineering and capacity planning.
-      - High-quality links and fewer congested interconnects.
-      - Strategic placement of data centres and backbone links.
-      - Fewer economic constraints such as peering disputes or hot-potato routing.
-
-      Public Internet paths are often chosen for policy or business reasons rather than minimum delay, so even geographically similar endpoints can see longer, less direct routes.
-    hint: "Private networks optimise paths; BGP on the public Internet is policy-driven."
-
-  - front: "Do you think 128 bits was the right size for IPv6 addresses? What trade-offs matter?"
+  - front: "Why exponential growth in slow start?"
     back: |
-      A good answer should discuss trade-offs rather than claim a single obvious answer.
+      Quickly finds available bandwidth.
 
-      Arguments for 128 bits:
-      - Huge address space for long-term growth.
-      - Supports hierarchical allocation and route aggregation.
-      - Makes renumbering, multihoming, and large subnets easier.
-      - Leaves room for future design flexibility.
-
-      Costs:
-      - Larger headers and addresses increase overhead in storage, logs, ACLs, and management.
-      - Addresses are harder for humans to read and handle.
-      - Some might argue a smaller size could still have been enough.
-
-      Balanced conclusion:
-      - 128 bits was generous, but that generosity reduces future exhaustion risk and simplifies large-scale allocation. Most systems accept the overhead because address scarcity was a major lesson from IPv4.
-    hint: "Discuss scalability, aggregation, future-proofing, and overhead."
-
-  - front: "What privacy concern arises if the IPv6 interface identifier is derived from the link-layer address, and do privacy addresses solve it?"
+  - front: "Why switch to congestion avoidance?"
     back: |
-      If the interface identifier is derived from the device's link-layer address, the resulting IPv6 address may be stable over time and across networks. This makes the device easier to track and can reveal hardware identity patterns.
+      To avoid overshooting capacity and causing congestion.
 
-      Privacy addresses mitigate this by using randomised interface identifiers, reducing long-term linkability and passive tracking.
-
-      But they do not solve everything:
-      - Other identifiers may still allow tracking.
-      - Devices may still use stable addresses for some purposes.
-      - Network prefix changes and application-layer identifiers also matter.
-
-      So privacy addresses reduce a major tracking risk but are not a complete privacy solution.
-    hint: "Stable hardware-derived IDs enable tracking; randomised IDs reduce but do not eliminate it."
-
-  - front: "Why can DNS lookup time vary significantly?"
+  - front: "Why use AIMD?"
     back: |
-      DNS lookup time varies because:
-      - Cached answers can be returned quickly, while cache misses require iterative resolution.
-      - The resolver may need to contact root, TLD, and authoritative servers.
-      - Network latency to those servers differs.
-      - Packet loss, retransmissions, and resolver load can add delay.
-      - DNSSEC validation or transport setup (for example DoT/DoH) may increase cost.
-      - Some names trigger multiple lookups, CNAME chains, or parallel queries.
+      Provides stability: gradual increase, rapid decrease.
 
-      So the main cause of variation is whether the needed information is already cached and, if not, how expensive the recursive resolution path becomes.
-    hint: "Cache hit vs cache miss is the big divider."
-
-  - front: "Why is multimedia traffic such as video conferencing bursty, and why are there lower and upper bounds on how much data must be sent?"
+  - front: "Why does TCP use packet loss as a signal?"
     back: |
-      Video and audio encoders generate variable-rate traffic because different content compresses differently. Complex scenes, motion, and keyframes need more bits than static or simple scenes, producing bursts.
+      Loss indicates congestion due to queue overflow.
 
-      Lower bound:
-      - Too little data means quality collapses or the receiver cannot maintain smooth playback.
-
-      Upper bound:
-      - Link capacity, playout deadlines, and codec/network constraints limit how much can be sent in a short interval.
-
-      Thus real-time media traffic varies over time, but within practical bounds set by quality needs and network capacity.
-    hint: "Variable encoding demand causes bursts; quality and capacity create bounds."
-
-  - front: "Why do interactive video applications usually use UDP rather than TCP?"
+  - front: "Why is ECN beneficial?"
     back: |
-      Interactive video prioritises timeliness over perfect reliability.
+      Signals congestion without dropping packets, reducing latency.
 
-      UDP is preferred because:
-      - Lost packets can be skipped rather than retransmitted too late to matter.
-      - There is no head-of-line blocking from in-order delivery requirements.
-      - Applications can implement their own rate control, FEC, concealment, and adaptation.
-      - Delay and jitter are usually more harmful to conversation quality than a small amount of loss.
-
-      TCP is usually a poor fit because retransmissions, strict ordering, and congestion response can increase latency and stall media delivery.
-    hint: "Real-time media cares more about delay than perfect delivery."
-
-  - front: "What happens to a UDP video call when a large TCP Cubic download shares the same bottleneck?"
+  - front: "Why is bufferbloat harmful?"
     back: |
-      The video quality often degrades: delay rises, jitter increases, and packets may be lost. Users may see freezes, lower quality, or choppy audio/video.
+      Large queues increase latency and jitter.
 
-      Why:
-      - TCP Cubic probes for available bandwidth and tends to fill queues.
-      - This causes queue buildup (bufferbloat) and increases latency for the UDP media packets.
-      - If the bottleneck becomes full, media packets may be dropped.
-      - UDP video typically does not directly force fair sharing in the same way as TCP, so the interaction depends on the queue and application adaptation.
-
-      The key point is that aggressive bulk TCP traffic can harm latency-sensitive UDP traffic even if the media stream alone would have fit easily.
-    hint: "Think queue buildup, extra delay, jitter, and loss."
-
-  - front: "In what circumstances could an interactive video application effectively use TCP with Cubic?"
+  - front: "Why do delay-based algorithms detect congestion earlier?"
     back: |
-      Only in limited situations, for example:
-      - The path has very low latency and little or no loss.
-      - Queues remain short, so retransmissions do not arrive too late.
-      - The application tolerates extra delay better than it tolerates loss.
-      - The content is not highly interactive, or buffering is acceptable.
+      They monitor RTT increases before packet loss occurs.
 
-      In general, highly interactive conversational media is a poor match for TCP Cubic because timeliness matters more than exact reliable in-order delivery.
-    hint: "Only when latency/loss are very low and extra delay is acceptable."
-
-  - front: "How do NAT traversal systems establish peer-to-peer connectivity in stages?"
+  - front: "Why is fairness an issue in congestion control?"
     back: |
-      A typical answer should describe three stages:
-      1. Binding discovery:
-         - Each peer learns its possible reachable addresses, including local candidates and externally visible mapped addresses, often using STUN.
-      2. Candidate exchange:
-         - Peers exchange those addresses over a signalling channel.
-      3. Connectivity checks:
-         - They probe candidate pairs to discover which combination actually works through the NATs and firewalls.
+      Different algorithms compete unevenly for bandwidth.
 
-      If direct connectivity fails, they may fall back to a relay.
-
-      The main idea is to discover, share, and test possible paths until one works.
-    hint: "Discover candidates, exchange them, then probe candidate pairs."
-
-  - front: "When answering NAT traversal candidate-count questions, what categories of candidate should you usually consider?"
+  - front: "Why is UDP best-effort?"
     back: |
-      You usually count:
-      - Host candidates: local interface addresses on each active interface.
-      - Server-reflexive candidates: public/mapped addresses learned via STUN for interfaces that can reach the STUN server.
-      - Relay candidates: addresses allocated by a relay server if relaying is available.
+      No guarantees of delivery, order, or duplication.
 
-      Candidate-pair counts are then usually the product of the number of candidates offered by each peer, unless the question states that some pairings are excluded.
-
-      Always state assumptions clearly, especially about:
-      - Whether IPv6 candidates are included.
-      - Whether separate candidates exist per interface and address family.
-      - Whether relay candidates are included for each peer.
-    hint: "Host + STUN-discovered mapped + relay; then form pairs across peers."
-
-  - front: "What is the main exam strategy for free-text Networked Systems answers based on recent papers?"
+  - front: "Why is UDP used for real-time traffic?"
     back: |
-      Prioritise these clusters first because they recur across recent papers:
-      1. Connection establishment and latency: TCP, TLS, QUIC, Happy Eyeballs.
-      2. DNS: root servers, anycast, DoT, DoH, DNS security, lookup timing.
-      3. Internet architecture and addressing: IPv4 exhaustion, NAT/CGNAT, IPv6 size and privacy.
-      4. Routing and evolution: intra- vs inter-domain routing, BGP policy/security, ossification, GREASE.
-      5. Real-time transport: UDP vs TCP, bursty media, Cubic interaction.
+      Avoids retransmission delays and head-of-line blocking.
 
-      In free text, define the concept, explain the mechanism, then discuss trade-offs or limitations. That pattern matches the style of the recent exams.
-    hint: "Recent repeat topics: handshake latency, DNS, IPv4/IPv6/NAT, BGP, UDP vs TCP."
+  - front: "Why does TCP harm real-time applications?"
+    back: |
+      Retransmissions and queueing increase latency.
+
+  - front: "Why is jitter problematic?"
+    back: |
+      Irregular packet timing disrupts playback.
+
+  - front: "Why is multimedia traffic bursty?"
+    back: |
+      Compression varies with content complexity.
+
+  - front: "Why do streaming services buffer?"
+    back: |
+      To smooth playback despite network variation.
+
+  - front: "Why does live streaming stall but pre-recorded doesn’t?"
+    back: |
+      Live has little buffering; pre-recorded buffers ahead.
+
+  - front: "What happens when TCP shares a bottleneck with UDP video?"
+    back: |
+      TCP fills queues, increasing delay and degrading video.
+
+  - front: "Why is DNS hierarchical?"
+    back: |
+      Enables scalable delegation of naming.
+
+  - front: "Why is DNS distributed?"
+    back: |
+      Many servers share responsibility globally.
+
+  - front: "Why are DNS results cached?"
+    back: |
+      Reduce latency and server load.
+
+  - front: "Why does DNS lookup time vary?"
+    back: |
+      Cache hits vs misses and network delays.
+
+  - front: "Why does DNS use UDP?"
+    back: |
+      Low overhead for small queries.
+
+  - front: "Why fall back to TCP for DNS?"
+    back: |
+      Large responses or reliability.
+
+  - front: "Why only 13 root server addresses?"
+    back: |
+      Protocol limits; replicated using anycast.
+
+  - front: "What is anycast and why is it useful?"
+    back: |
+      Same IP at multiple locations; routes to nearest server.
+
+  - front: "Why is DoH controversial?"
+    back: |
+      Hides DNS traffic inside HTTPS, bypassing controls.
+
+  - front: "Why is DoT less controversial?"
+    back: |
+      Uses dedicated port, easier to manage.
+
+  - front: "What is DNSSEC for?"
+    back: |
+      Ensures authenticity and integrity of DNS records.
+
+  - front: "Why does NAT break end-to-end connectivity?"
+    back: |
+      It hides internal addresses and modifies packets.
+
+  - front: "Why is NAT needed?"
+    back: |
+      IPv4 address exhaustion.
+
+  - front: "Why is CGNAT problematic?"
+    back: |
+      Breaks inbound connections and complicates attribution.
+
+  - front: "Why is NAT traversal complex?"
+    back: |
+      NAT behaviour varies and requires probing many paths.
+
+  - front: "What are NAT traversal stages?"
+    back: |
+      Discovery, candidate exchange, connectivity checks.
+
+  - front: "Why does IPv6 avoid NAT?"
+    back: |
+      Large address space allows global addressing.
+
+  - front: "Why are IPv6 privacy addresses used?"
+    back: |
+      To prevent device tracking.
+
+  - front: "Why doesn’t IPv6 fully solve privacy?"
+    back: |
+      Other identifiers still allow tracking.
+
+  - front: "Why might BGP choose suboptimal paths?"
+    back: |
+      Routing is policy-based, not performance-based.
+
+  - front: "Why is BGP vulnerable?"
+    back: |
+      Lacks strong built-in validation.
+
+  - front: "What is prefix hijacking?"
+    back: |
+      False route advertisement to redirect traffic.
+
+  - front: "How does RPKI help?"
+    back: |
+      Verifies authorised prefix origins.
+
+  - front: "Why is BGP called path-vector?"
+    back: |
+      It advertises full AS paths.
+
+  - front: "Why are CDNs used?"
+    back: |
+      Reduce latency and server load via caching.
+
+  - front: "Why use DNS-based CDN redirection?"
+    back: |
+      Direct users to appropriate servers before connection.
+
+  - front: "Why is DNS-based CDN selection imperfect?"
+    back: |
+      It lacks real-time network awareness.
+
+  - front: "Why are CDNs good against DDoS?"
+    back: |
+      Distributed infrastructure absorbs attack traffic.
+
+  - front: "Why are private networks faster than the public Internet?"
+    back: |
+      Optimised routing, fewer policy constraints.
+
+  - front: "Why do many packets have size ~40 bytes or ~1500 bytes?"
+    back: |
+      ~40 bytes: ACKs; ~1500 bytes: Ethernet MTU.
+
+  - front: "Why is encryption increasingly used?"
+    back: |
+      Protects privacy and prevents interference.
+
+  - front: "Why is the robustness principle controversial?"
+    back: |
+      Accepting invalid input can entrench bad behaviour.

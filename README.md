@@ -4,47 +4,24 @@
 
 ## Features
 
-- YAML-backed flashcard decks
+- Simple `yml` flashcard decks
 - Front/back card display with optional hints
 - Keyboard navigation in a terminal UI
-- Sequential previous/next navigation
-- Random card selection
 
-## Requirements
+## Quick Start
 
-- Rust 2024 edition toolchain
-- A terminal that supports alternate-screen TUI applications
+I've not released this on any package manager nor have I created an install script yet, so for the now just install manually:
 
-## Usage
+1. Clone the tool, `git clone https://github.com/mcmanussliam/flashrs.git`
+2. Navigate to the cloned repository
+3. Install the tool, `cargo install --path .`
+4. That's it 🎉
 
-Run the example deck:
-
-```sh
-cargo run -- examples/example.yml
-```
-
-Run another deck:
+Now you can run specific files, I've got a few examples in the repository already:
 
 ```sh
-cargo run -- path/to/deck.yml
+flashrs examples/example.yml
 ```
-
-Build a release binary:
-
-```sh
-cargo build --release
-./target/release/flashrs examples/example.yml
-```
-
-## Controls
-
-| Key | Action |
-| --- | --- |
-| `F` or `Enter` | Flip the current card |
-| `N` or `Right` | Move to the next card |
-| `P` or `Left` | Move to the previous card |
-| `R` or `Space` | Jump to a random card |
-| `Q` or `Esc` | Quit |
 
 ## Deck Format
 
@@ -63,10 +40,3 @@ cards:
 
 The example files also include metadata such as `name`, `author`, and `year`. These fields are harmless, but the app currently only reads `cards`.
 
-## Examples
-
-This repository includes:
-
-- `examples/example.yml`: a small Rust-focused sample deck
-- `examples/ns.yml`: Network Systems study cards
-- `examples/os.yml`: Operating Systems study cards
